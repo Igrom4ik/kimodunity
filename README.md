@@ -19,16 +19,68 @@ This repo provides code, checkpoints, and demos to work with the pre-trained ARD
 * **Auto-downloading Text Encoder:** Utilizes the lightweight NF4-quantized version of the text encoder, which is downloaded automatically on its first run.
 
 
-In a fresh Python 3.10+ environment (conda or venv), first install a build of **PyTorch** (>= 2.4) that matches your machine's CUDA, then install ARDY in editable mode with all optional features:
+## Prerequisites
 
-```bash
-conda create -n ardy python=3.11 -y
-conda activate ardy
-# Install PyTorch for your CUDA version first — see https://pytorch.org/get-started/locally/
-# For example:
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+* **OS:** Windows 10/11 or Linux
+* **Python:** 3.10+
+* **Node.js / npm:** Required by Viser web UI
+* **GPU:** NVIDIA GPU with latest driver
+---
+
+## Step-by-Step Installation
+
+### 1. Clone Repository & Create Virtual Environment
+
+Open Command Prompt (`cmd.exe`) and Clone the project repository, navigate into the directory, and create a Python 3.11 virtual environment:
+
+```cmd
+git clone https://github.com/Aero-Ex/ardy
+cd ardy
+python -m venv ardyvenv
+ardyvenv\Scripts\activate.bat
+```
+### 2. Install PyTorch > 12.4, I am installing PyTorch12.8
+```cmd
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+```
+### 3. Now Install motion correction
+if your using python11 and windows copy this command, for linux and other python find wheel from here  <a>https://github.com/Aero-Ex/kimodo/releases</a>
+```cmd
+pip install https://github.com/Aero-Ex/kimodo/releases/download/v1.0.0/motion_correction-1.0.0-cp311-cp311-win_amd64.whl
+```
+### 3. Now lets install dependencies
+```cmd
 pip install -e ".[all]"
 pip install bitsandbytes
+```
+### 4. lets install node.js 
+Before launching the UI,  users must ensure Node.js is installed. 
+
+**For the latest stable (LTS) version:**
+```powershell
+winget install -e --id OpenJS.NodeJS.LTS
+```
+
+**For the current version (latest features):**
+```powershell
+winget install -e --id OpenJS.NodeJS
+```
+
+**Verification:** After installation, restart your terminal and verify the versions:
+```powershell
+node -v
+npm -v
+npx -v
+```
+
+### 5. Launch Interactive Demo
+
+```bash
+python scripts/run_demo.py
+```
+> or 
+```bash
+python scripts/run_demo.py --offload
 ```
 
 <details>
@@ -60,26 +112,6 @@ ARDY checkpoints are available trained on various skeletons with differing FPS a
 
 
 **Coming soon!** We are working to train a version of ARDY on Rigplay 1 with the [SOMA body model](https://github.com/NVlabs/SOMA-X) skeleton.
-
-
-## Interactive Demo
-
-We provide an interactive demo that enables real-time humanoid character control through a combination of streaming text prompts and interactive spatial constraints. Below are some features of the interactive demo:
-
-- Online motion generation visualized in web browser viewport
-- Streaming text-to-motion
-- Kinematically constrained motion generation (full body keyframes, root trajectory and waypoints, end-effector joints)
-- Mouse and keyboard-based locomotion controls
-
-### Launch Interactive Demo
-
-```bash
-python scripts/run_demo.py
-```
-> or 
-```bash
-python scripts/run_demo.py --offload
-```
 
 
 ### Quick Start

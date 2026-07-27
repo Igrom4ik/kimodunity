@@ -31,6 +31,21 @@ from interactive_demo.motion_io import MotionIOMixin
 from interactive_demo.playback import PlaybackMixin
 from interactive_demo.session_io import SessionIOMixin
 
+import os
+import subprocess
+import sys
+
+# Windows subprocess wrapper fix for Viser client autobuild
+if sys.platform == "win32":
+  _orig_run = subprocess.run
+
+  def _patched_run(*args, **kwargs):
+    kwargs["shell"] = True
+    return _orig_run(*args, **kwargs)
+
+  import viser._client_autobuild
+
+  viser._client_autobuild.subprocess.run = _patched_run
 
 class InteractiveTimelineDemo(
     ModelLoadingMixin,
