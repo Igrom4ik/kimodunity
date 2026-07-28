@@ -39,7 +39,7 @@ cd ardy
 python -m venv ardyvenv
 ardyvenv\Scripts\activate.bat
 ```
-### 2. Install PyTorch > 12.4, I am installing PyTorch12.8
+### 2. Install PyTorch > cu12.4, I am installing PyTorch cu12.8
 ```cmd
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 ```

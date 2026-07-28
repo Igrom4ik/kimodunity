@@ -181,6 +181,37 @@ class SessionIOMixin:
             traceback.print_exc()
             return False
 
+    def export_bvh(self, client_id: int, filepath: str) -> bool:
+        """Export current generated motion to a BVH file."""
+        if not self.client_active(client_id):
+            return False
+        session = self.client_sessions[client_id]
+
+        if session.motion_tensor is None or session.motion_rep is None:
+            print("[Export BVH] No motion data available to export.")
+            return False
+
+        try:
+            from ardy.skeleton.bvh import save_bvh_file
+
+            tensor_unnorm = session.motion_rep.unnormalize(session.motion_tensor)
+            inverse_output = session.motion_rep.inverse(tensor_unnorm, is_normalized=False)
+            local_rot_mats = inverse_output["local_rot_mats"]
+            root_positions = inverse_output["root_positions"]
+
+            fps = float(getattr(session, "model_fps", 20.0))
+            skeleton = session.motion_rep.skeleton
+
+            save_bvh_file(filepath, local_rot_mats, root_positions, skeleton, fps)
+            print(f"[Export BVH] Saved motion to {filepath}")
+            return True
+        except Exception as e:
+            print(f"[Export BVH] Error exporting BVH: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return False
+
     def load_session(self, client_id: int, filepath: str):
         """Load generated motion, text prompts, and constraints from a pickle file."""
         if not self.client_active(client_id):

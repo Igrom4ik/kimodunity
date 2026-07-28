@@ -42,9 +42,9 @@ class CoreSkin:
                 raise ValueError(f"MISMATCH in skinnging rig: expected='{sname}' vs rig='{rname}'")
 
     def lbs(self, posed_transform):
-        bind_rig_transform_inv = self.bind_rig_transform_inv
-        bind_vertices = self.bind_vertices
-        lbs_weights = self.lbs_weights
+        bind_rig_transform_inv = self.bind_rig_transform_inv.to(dtype=posed_transform.dtype)
+        bind_vertices = self.bind_vertices.to(dtype=posed_transform.dtype)
+        lbs_weights = self.lbs_weights.to(dtype=posed_transform.dtype)
         # posed_transform: [B, F, J, 4, 4] or [B, J, 4, 4] or [J, 4, 4]
         # unsqueeze to match posed_transform dim
         for _ in range(posed_transform.dim() - 3):
@@ -74,12 +74,12 @@ class CoreSkin:
         device = joint_rotmat.device
 
         # prepare full transformation matrices
-        fk_transform = torch.eye(4, device=device)[None, None].repeat(nF, nJ, 1, 1)
+        fk_transform = torch.eye(4, device=device, dtype=joint_rotmat.dtype)[None, None].repeat(nF, nJ, 1, 1)
         fk_transform[..., :3, 3] = joint_pos
         if rot_is_global:
             fk_transform[..., :3, :3] = joint_rotmat
         else:
-            neutral_joints_seq = self.skeleton.neutral_joints[None].repeat((nF, 1, 1)).to(device)
+            neutral_joints_seq = self.skeleton.neutral_joints[None].repeat((nF, 1, 1)).to(device=device, dtype=joint_rotmat.dtype)
             # FK to get the global rotations
             _, global_joint_rotmat = batch_rigid_transform(
                 joint_rotmat,

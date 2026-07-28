@@ -55,9 +55,9 @@ class SOMASkin:
                 raise ValueError(f"MISMATCH in skinning rig: expected='{sname}' vs rig='{rname}'")
 
     def lbs(self, posed_transform):
-        bind_rig_transform_inv = self.bind_rig_transform_inv
-        bind_vertices = self.bind_vertices
-        lbs_weights = self.lbs_weights
+        bind_rig_transform_inv = self.bind_rig_transform_inv.to(dtype=posed_transform.dtype)
+        bind_vertices = self.bind_vertices.to(dtype=posed_transform.dtype)
+        lbs_weights = self.lbs_weights.to(dtype=posed_transform.dtype)
         for _ in range(posed_transform.dim() - 3):
             bind_rig_transform_inv = bind_rig_transform_inv.unsqueeze(0)
             bind_vertices = bind_vertices.unsqueeze(0)
@@ -93,7 +93,7 @@ class SOMASkin:
             local_joint_rots_mats = self.skeleton_input.to_SOMASkeleton77(local_joint_rots_mats_subset)
 
             # FK to get the global joint pos and rot
-            neutral_joints_seq = self.skeleton_skin.neutral_joints[None].repeat((nF, 1, 1)).to(device)
+            neutral_joints_seq = self.skeleton_skin.neutral_joints[None].repeat((nF, 1, 1)).to(device=device, dtype=joint_rotmat.dtype)
             new_joint_pos, joint_rotmat = batch_rigid_transform(
                 local_joint_rots_mats,
                 neutral_joints_seq,
@@ -105,12 +105,12 @@ class SOMASkin:
             rot_is_global = True
 
         # prepare full transformation matrices
-        fk_transform = torch.eye(4, device=device)[None, None].repeat(nF, nJ, 1, 1)
+        fk_transform = torch.eye(4, device=device, dtype=joint_rotmat.dtype)[None, None].repeat(nF, nJ, 1, 1)
         fk_transform[..., :3, 3] = joint_pos
         if rot_is_global:
             fk_transform[..., :3, :3] = joint_rotmat
         else:
-            neutral_joints_seq = self.skeleton_skin.neutral_joints[None].repeat((nF, 1, 1)).to(device)
+            neutral_joints_seq = self.skeleton_skin.neutral_joints[None].repeat((nF, 1, 1)).to(device=device, dtype=joint_rotmat.dtype)
             _, global_joint_rotmat = batch_rigid_transform(
                 joint_rotmat,
                 neutral_joints_seq,

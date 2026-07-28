@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """BVH parsing utilities and skeleton/animation conversion helpers."""
 
+import os
 import re
 from typing import Optional, Tuple
 
@@ -576,3 +577,105 @@ def parse_bvh_motion(file_path_input: str, parse_neutral_joints: bool = False):
     root_idx = 0
     neutral_joints = torch.tensor(neutral_joints - neutral_joints[root_idx])
     return local_rot_mats, root_trans, fps, neutral_joints
+
+
+def save_bvh_file(
+    filepath: str,
+    local_rot_mats: torch.Tensor,
+    root_positions: torch.Tensor,
+    skeleton,
+    fps: float = 20.0,
+    scale_to_cm: bool = True,
+):
+    """Save root translations and joint rotation matrices to a BVH file.
+
+    Args:
+        filepath: Target output .bvh path.
+        local_rot_mats: Tensor/array of shape (T, J, 3, 3).
+        root_positions: Tensor/array of shape (T, 3).
+        skeleton: Skeleton instance (e.g. SOMASkeleton30, SOMASkeleton77, CoreSkeleton27).
+        fps: Playback frame rate.
+        scale_to_cm: If True, convert meters to centimeters.
+    """
+    if isinstance(local_rot_mats, torch.Tensor):
+        local_rot_mats = local_rot_mats.detach().cpu().numpy()
+    if isinstance(root_positions, torch.Tensor):
+        root_positions = root_positions.detach().cpu().numpy()
+
+    if len(local_rot_mats.shape) == 5:
+        local_rot_mats = local_rot_mats[0]
+    if len(root_positions.shape) == 3:
+        root_positions = root_positions[0]
+
+    num_frames, num_joints = local_rot_mats.shape[:2]
+    pos_scale = 100.0 if scale_to_cm else 1.0
+    root_positions = root_positions * pos_scale
+
+    neutral = (
+        skeleton.bvh_neutral_joints
+        if hasattr(skeleton, "bvh_neutral_joints") and skeleton.bvh_neutral_joints is not None
+        else skeleton.neutral_joints
+    )
+    if isinstance(neutral, torch.Tensor):
+        neutral = neutral.detach().cpu().numpy()
+
+    parents = skeleton.joint_parents
+    if isinstance(parents, torch.Tensor):
+        parents = parents.detach().cpu().numpy()
+
+    bone_names = skeleton.bone_order_names
+
+    offsets = np.zeros((num_joints, 3), dtype=np.float32)
+    for j in range(num_joints):
+        p = parents[j]
+        if p == -1:
+            offsets[j] = neutral[j] * pos_scale
+        else:
+            offsets[j] = (neutral[j] - neutral[p]) * pos_scale
+
+    children = {i: [] for i in range(num_joints)}
+    for j, p in enumerate(parents):
+        if p >= 0:
+            children[p].append(j)
+
+    os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else ".", exist_ok=True)
+
+    with open(filepath, "w") as f:
+        f.write("HIERARCHY\n")
+
+        def write_joint(idx, indent_level):
+            indent = "  " * indent_level
+            name = bone_names[idx]
+            off = offsets[idx]
+            header = f"ROOT {name}" if idx == 0 else f"JOINT {name}"
+            f.write(f"{indent}{header}\n{indent}{{\n")
+            f.write(f"{indent}  OFFSET {off[0]:.6f} {off[1]:.6f} {off[2]:.6f}\n")
+            if idx == 0:
+                f.write(f"{indent}  CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation\n")
+            else:
+                f.write(f"{indent}  CHANNELS 3 Zrotation Xrotation Yrotation\n")
+
+            if children[idx]:
+                for c in children[idx]:
+                    write_joint(c, indent_level + 1)
+            else:
+                f.write(
+                    f"{indent}  End Site\n{indent}  {{\n{indent}    OFFSET 0.000000 0.000000 0.000000\n{indent}  }}\n"
+                )
+
+            f.write(f"{indent}}}\n")
+
+        write_joint(0, 0)
+        f.write("MOTION\n")
+        f.write(f"Frames: {num_frames}\n")
+        f.write(f"Frame Time: {1.0 / fps:.6f}\n")
+
+        rot_mats = local_rot_mats.reshape(-1, 3, 3)
+        eulers = Rotation.from_matrix(rot_mats).as_euler("ZXY", degrees=True).reshape(num_frames, num_joints, 3)
+
+        for t in range(num_frames):
+            vals = list(root_positions[t])
+            for j in range(num_joints):
+                vals.extend(eulers[t, j])
+            f.write(" ".join(f"{v:.6f}" for v in vals) + "\n")
+

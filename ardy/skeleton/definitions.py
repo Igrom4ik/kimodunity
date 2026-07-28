@@ -248,8 +248,11 @@ class SOMASkeleton30(SkeletonBase):
         # Converting from 30-joint to 77-joint to have relaxed hands
 
         device = local_joint_rots_subset.device
+        dtype = local_joint_rots_subset.dtype
         nF = len(local_joint_rots_subset)
-        local_joint_rots_mats = self.somaskel77.relaxed_hands_rest_pose.clone().to(device).repeat(nF, 1, 1, 1)
+        local_joint_rots_mats = (
+            self.somaskel77.relaxed_hands_rest_pose.clone().to(device=device, dtype=dtype).repeat(nF, 1, 1, 1)
+        )
 
         skel_slice = self.get_skel_slice(self.somaskel77)
         local_joint_rots_mats[:, skel_slice] = local_joint_rots_subset

@@ -21,6 +21,14 @@ class GuiIOMixin:
                 g.gui_export_session_button = client.gui.add_button("Export Session")
                 g.gui_load_session_button = client.gui.add_button("Load Session")
 
+            # BVH Export Group
+            with client.gui.add_folder("BVH Export", expand_by_default=True):
+                g.gui_bvh_file_path = client.gui.add_text(
+                    "BVH File Path",
+                    initial_value=f".cache/export/motion_{default_timestamp}.bvh",
+                )
+                g.gui_export_bvh_button = client.gui.add_button("Export BVH")
+
             # Root Constraints Group
             with client.gui.add_folder("Root Constraints", expand_by_default=True):
                 g.gui_root_file_path = client.gui.add_text(
@@ -104,6 +112,26 @@ class GuiIOMixin:
                         event.client.add_notification(
                             title="Export Failed",
                             body="Failed to export session. Check console for details.",
+                            auto_close_seconds=5.0,
+                            color="red",
+                        )
+
+            @g.gui_export_bvh_button.on_click
+            def _(event: viser.GuiEvent) -> None:
+                filepath = g.gui_bvh_file_path.value
+                success = self.export_bvh(client_id, filepath)
+                if event.client:
+                    if success:
+                        event.client.add_notification(
+                            title="BVH Exported",
+                            body=f"Saved to {filepath}",
+                            auto_close_seconds=3.0,
+                            color="green",
+                        )
+                    else:
+                        event.client.add_notification(
+                            title="BVH Export Failed",
+                            body="Failed to export BVH. Make sure motion is generated.",
                             auto_close_seconds=5.0,
                             color="red",
                         )
