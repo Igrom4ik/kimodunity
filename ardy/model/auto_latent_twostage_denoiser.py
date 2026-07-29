@@ -215,7 +215,8 @@ class AutoLatentTwostageDenoiser(nn.Module):
                         motion_mask.reshape(bs, num_tokens, -1),
                     ],
                     dim=-1,
-                )
+                ).to(dtype=self.global_root_hybrid_constraints_proj.weight.dtype)
+                x = x.to(dtype=self.global_root_hybrid_proj.weight.dtype)
 
                 if self.trt_compatible:
                     # Dense masking instead of fancy indexing (TRT-compatible)
@@ -225,7 +226,11 @@ class AutoLatentTwostageDenoiser(nn.Module):
                     )
                     history_token_proj = self.global_root_hybrid_proj(x) * history_token_mask[:, :, None]
                     future_token_proj = (
-                        self.future_constraints_proj(x_infilled_extended[:, :, self.latent_embedding_dim :])
+                        self.future_constraints_proj(
+                            x_infilled_extended[:, :, self.latent_embedding_dim :].to(
+                                dtype=self.future_constraints_proj.weight.dtype
+                            )
+                        )
                         * future_token_mask[:, :, None]
                     )
                     root_stage_input = generation_token_proj + history_token_proj + future_token_proj
@@ -242,7 +247,7 @@ class AutoLatentTwostageDenoiser(nn.Module):
                     future_constraints_input = x_infilled_extended[future_token_mask]
                     future_constraints_input = future_constraints_input[
                         :, self.latent_embedding_dim :
-                    ]  # [num_future_tokens, D], extract the part after the latent body embedding
+                    ].to(dtype=self.future_constraints_proj.weight.dtype)
                     future_token_proj = self.future_constraints_proj(future_constraints_input)
                     dtype = generation_token_proj.dtype
                     device = generation_token_proj.device
@@ -256,7 +261,7 @@ class AutoLatentTwostageDenoiser(nn.Module):
             else:
                 raise NotImplementedError(f"This motion mask mode ({self.motion_mask_mode}) is not supported.")
         else:
-            root_stage_input = self.global_root_hybrid_proj(x)
+            root_stage_input = self.global_root_hybrid_proj(x.to(dtype=self.global_root_hybrid_proj.weight.dtype))
             root_stage_pad_mask = history_token_mask | generation_token_mask
         root_stage_token_index = token_index
         if self.sparsify_token_seq:
@@ -325,7 +330,8 @@ class AutoLatentTwostageDenoiser(nn.Module):
                     motion_mask.reshape(bs, num_tokens, -1),
                 ],
                 dim=-1,
-            )
+            ).to(dtype=self.local_root_hybrid_constraints_proj.weight.dtype)
+            x_new = x_new.to(dtype=self.local_root_hybrid_proj.weight.dtype)
             if self.trt_compatible:
                 generation_token_proj = (
                     self.local_root_hybrid_constraints_proj(x_new_extended) * generation_token_mask[:, :, None]
@@ -352,7 +358,7 @@ class AutoLatentTwostageDenoiser(nn.Module):
                 body_stage_pad_mask = history_token_mask | generation_token_mask | future_token_mask
         else:
             assert self.motion_mask_mode is None
-            body_stage_input = self.local_root_hybrid_proj(x_new)
+            body_stage_input = self.local_root_hybrid_proj(x_new.to(dtype=self.local_root_hybrid_proj.weight.dtype))
             body_stage_pad_mask = history_token_mask | generation_token_mask
         body_stage_token_index = token_index
         if self.sparsify_token_seq:

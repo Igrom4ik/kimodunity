@@ -505,13 +505,21 @@ class ConstraintsMixin:
             }
 
         # Get joints data from current motion
+        if session.joints_pos is None or session.joints_pos.shape[1] == 0:
+            print(f"[Constraint] No motion data available to initialize constraint at frame {start_frame_idx}")
+            return
+
+        max_valid_idx = session.joints_pos.shape[1] - 1
+        safe_start_idx = min(start_frame_idx, max_valid_idx)
+        safe_end_idx = min(end_frame_idx, max_valid_idx)
+
         if constraint_type in ["Full-Body", "End-Effectors"]:
             if is_interval:
-                joints_pos = session.joints_pos[0, start_frame_idx : end_frame_idx + 1]
-                joints_rot = session.joints_rot[0, start_frame_idx : end_frame_idx + 1]
+                joints_pos = session.joints_pos[0, safe_start_idx : safe_end_idx + 1]
+                joints_rot = session.joints_rot[0, safe_start_idx : safe_end_idx + 1]
             else:
-                joints_pos = session.joints_pos[0, start_frame_idx]
-                joints_rot = session.joints_rot[0, start_frame_idx]
+                joints_pos = session.joints_pos[0, safe_start_idx]
+                joints_rot = session.joints_rot[0, safe_start_idx]
 
             constraint_kwargs["joints_pos"] = joints_pos
             constraint_kwargs["joints_rot"] = joints_rot
@@ -523,10 +531,10 @@ class ConstraintsMixin:
             # Clone (slices are views into session.joints_pos) and drop the marker
             # to the ground: the 2D root viz expects y = 0, not pelvis height.
             if is_interval:
-                root_pos = session.joints_pos[0, start_frame_idx : end_frame_idx + 1, 0, :].clone()
+                root_pos = session.joints_pos[0, safe_start_idx : safe_end_idx + 1, 0, :].clone()
                 root_pos[:, 1] = 0.0
             else:
-                root_pos = session.joints_pos[0, start_frame_idx, 0, :].clone()
+                root_pos = session.joints_pos[0, safe_start_idx, 0, :].clone()
                 root_pos[1] = 0.0
             constraint_kwargs["root_pos"] = root_pos
 

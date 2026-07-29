@@ -60,7 +60,7 @@ demo = [
 # only deserialize with the exact TensorRT version that built them.
 trt = [
   "tensorrt-cu12==10.13.0.35",
-  "onnx>=1.16",
+  "onnx>=1.16,<1.19",
 ]
 all = [
   "ardy[demo,trt]",

@@ -198,6 +198,10 @@ class GenerationMixin:
             f"Generate with frame idx {session.frame_idx}, history start: {history_start_idx}, end: {history_end_idx}, length: {history_length}"
         )
 
+        if session.text_embedding is None:
+            print("[Generation] text_embedding is None (model/prompt loading in progress), skipping generation step.")
+            return
+
         num_samples = session.gui_elements.gui_num_samples.value
         text_feat = session.text_embedding.repeat(num_samples, 1, 1)
         text_pad_mask = torch.ones(text_feat.shape[0], text_feat.shape[1], device=self.device, dtype=torch.bool)
