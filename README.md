@@ -1,10 +1,51 @@
-# ARDY: Autoregressive Diffusion with Hybrid Representation for Interactive Human Motion Generation
+# KimodUnity: ARDY Motion Generation for Unity
 
 <p align="center">
   <a href="https://research.nvidia.com/labs/sil/projects/ardy/"><img src="https://img.shields.io/badge/Project-Page-blue" alt="Project Page"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-76B900.svg" alt="License"></a>
   <img src="./assets/banner.png" alt="Banner" width="100%">
 </p>
+
+> [!IMPORTANT]
+> Это Unity-ориентированная версия ARDY. Основная цель репозитория — запуск генерации движения в Python и передача результатов в Unity через локальный bridge.
+
+## Unity-версия
+
+Репозиторий содержит Python-часть интеграции: ARDY `core40`, локальный TCP bridge и инструменты проверки протокола. Unity отвечает за подключение к bridge, предпросмотр анимации, работу с Humanoid и последующий bake результата.
+
+Текущая архитектура разделена на три части:
+
+- **`kimodunity` (этот репозиторий):** модель ARDY, генерация движения и Python bridge;
+- **[`ArdyUnity`](https://github.com/Igrom4ik/ArdyUnity):** закрытый Unity-проект разработки и проверки интеграции;
+- **Unity Package (планируется):** отдельный устанавливаемый пакет для подключения Unity-проекта к `kimodunity`.
+
+Bridge по умолчанию слушает `127.0.0.1:8801`, использует версионированный протокол `v1` и передаёт движение в формате `cskel27`. Описание сообщений находится в [`ardy_bridge/PROTOCOL.md`](ardy_bridge/PROTOCOL.md), полный план интеграции — в [`ARDY_Unity_Bridge_Plan.md`](ARDY_Unity_Bridge_Plan.md).
+
+### Быстрая проверка bridge
+
+Запустите smoke-сервер и клиент в двух терминалах:
+
+```bash
+python tools/bridge_smoke_server.py
+```
+
+```bash
+python tools/bridge_smoke_client.py
+```
+
+Проверка тестов Python-части:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Запуск bridge с реальной моделью (требуются CUDA и доступные локально checkpoints/text encoder):
+
+```bash
+python tools/run_core40_bridge.py --prompt "A person walks." --total-frames 120
+```
+
+## Базовая технология ARDY
 
 ARDY is an autoregressive diffusion model designed for interactive motion generation, supporting online text prompting and flexible long-horizon kinematic constraints (root paths/waypoints, full-body keyframes, and sparse joint positions/rotations) with real-time responsiveness.
 
@@ -34,8 +75,8 @@ This repo provides code, checkpoints, and demos to work with the pre-trained ARD
 Open Command Prompt (`cmd.exe`) and Clone the project repository, navigate into the directory, and create a Python 3.11 virtual environment:
 
 ```cmd
-git clone https://github.com/Aero-Ex/ardy
-cd ardy
+git clone https://github.com/Igrom4ik/kimodunity
+cd kimodunity
 python -m venv ardyvenv
 ardyvenv\Scripts\activate.bat
 ```
