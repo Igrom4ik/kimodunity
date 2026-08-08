@@ -21,6 +21,21 @@
 
 Bridge по умолчанию слушает `127.0.0.1:8801`, использует версионированный протокол `v1` и передаёт движение в формате `cskel27`. Описание сообщений находится в [`ardy_bridge/PROTOCOL.md`](ardy_bridge/PROTOCOL.md), полный план интеграции — в [`ARDY_Unity_Bridge_Plan.md`](ARDY_Unity_Bridge_Plan.md).
 
+### Рабочий процесс в Unity
+
+В `ArdyUnity` откройте `ARDY → Motion Studio`, назначьте `Target Animator` с валидным Humanoid Avatar, введите английский prompt и нажмите `Generate Motion`. Окно выполняет генерацию, playback, seek, loop и bake без обязательного открытия web UI.
+
+Preview поддерживает:
+
+- Orbit, Pan, Zoom и Reset View;
+- штатный Unity Scene View orientation gizmo с направлениями X/Y/Z;
+- синхронный Perspective/Orthographic;
+- `In Place` для удаления горизонтального root motion;
+- `Lock / Grounded`, удерживающий нижнюю подошву на плоскости корня;
+- `Source Vertical Motion` для прыжков, падений и другого вертикального движения источника.
+
+Для bake можно выбрать диапазон, имя и папку клипа, Loop Time/Blend и отдельный Bake In Place. Старые клипы, созданные до исправления метрического Root Y, следует запечь заново.
+
 ### Быстрая проверка bridge
 
 Запустите smoke-сервер и клиент в двух терминалах:
