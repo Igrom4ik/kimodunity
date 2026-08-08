@@ -313,7 +313,6 @@ class ClientSession:
     playing: bool = False
     cur_time: float = -1.0
     playback_fps: int = 30
-
     # Camera state for smoothing
     camera_position: Optional[np.ndarray] = None
     camera_look_at: Optional[np.ndarray] = None
