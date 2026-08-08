@@ -72,6 +72,7 @@ zip-safe = false
 
 [tool.setuptools.package-data]
 ardy = ["assets/**/*"]
+ardy_bridge = ["PROTOCOL.md"]
 
 [tool.ruff]
 line-length = 120

@@ -96,7 +96,7 @@ class CMakeBuild(build_ext):
 
 
 setup(
-    packages=find_packages(include=["ardy", "ardy.*"]),
+    packages=find_packages(include=["ardy", "ardy.*", "ardy_bridge", "ardy_bridge.*"]),
     # ext_modules=[CMakeExtension("motion_correction._motion_correction", "MotionCorrection")],
     # cmdclass={"build_ext": CMakeBuild},
 )

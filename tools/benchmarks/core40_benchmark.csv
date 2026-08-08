@@ -1,0 +1,7 @@
+model,diffusion_steps,initial_no_history_ms,warm_mean_ms,warm_median_ms,warm_min_ms,warm_max_ms,realtime_factor,peak_vram_mib,warm_repetitions,history_frames,horizon_frames,fps,model_load_ms
+ARDY-Core-RP-20FPS-Horizon40,10,579.81,230.58,226.76,188.89,271.92,8.67,883.12,10,4,40,20,1343.30
+ARDY-Core-RP-20FPS-Horizon40,8,136.89,177.51,165.90,142.98,287.69,11.27,883.12,10,4,40,20,1343.30
+ARDY-Core-RP-20FPS-Horizon40,6,108.01,133.79,135.64,109.73,157.11,14.95,883.12,10,4,40,20,1343.30
+ARDY-Core-RP-20FPS-Horizon40,4,84.10,100.43,99.25,75.67,123.97,19.91,883.12,10,4,40,20,1343.30
+ARDY-Core-RP-20FPS-Horizon40,2,48.44,51.54,50.39,43.63,60.00,38.80,883.12,10,4,40,20,1343.30
+ARDY-Core-RP-20FPS-Horizon40,1,21.99,36.11,33.77,28.14,48.44,55.39,883.12,10,4,40,20,1343.30

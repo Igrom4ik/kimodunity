@@ -31,6 +31,15 @@ class PlaybackMixin:
                 if session.frame_idx < session.max_frame_idx:
                     session.frame_idx += 1
                     self.set_frame(client_id, session.frame_idx)
+                elif (
+                    session.max_frame_idx >= 0
+                    and not session.gui_elements.gui_enable_auto_replan_checkbox.value
+                ):
+                    # A finite range loops as one complete clip until the user
+                    # presses Pause. Auto-Replan remains the infinite-generation
+                    # mode and therefore must not rewind here.
+                    session.frame_idx = 0
+                    self.set_frame(client_id, 0)
 
             # Sleep to maintain target FPS (using model's native FPS)
             time_remaining = max(0, 1.0 / session.model_fps - (time.time() - last_update_time))
@@ -134,22 +143,36 @@ class PlaybackMixin:
         # Note: Each character has its own actual velocity arrow (blue) shown on their skeleton
         # We also have ONE shared target velocity arrow (orange) for the entire session
         root_pos_for_target = None
+        # Restart clears the session tensors from another thread. Keep local
+        # references so a playback tick that was already in flight either uses
+        # one complete snapshot or safely skips the pose update.
+        with session.motion_tensor_lock:
+            joints_pos = session.joints_pos
+            joints_rot = session.joints_rot
+            foot_contacts_all = session.foot_contacts
+            root_velocities_all = session.root_velocities
+
         with session.characters_lock:
-            if frame_idx >= 0 and frame_idx <= session.max_frame_idx:
+            if (
+                frame_idx >= 0
+                and frame_idx <= session.max_frame_idx
+                and joints_pos is not None
+                and joints_rot is not None
+            ):
                 for character_idx, character in enumerate(session.characters.values()):
                     # Get actual root velocity for this frame (pass as tensor)
                     root_velocity = None
-                    if session.root_velocities is not None:
-                        root_velocity = session.root_velocities[character_idx, frame_idx]
+                    if root_velocities_all is not None:
+                        root_velocity = root_velocities_all[character_idx, frame_idx]
 
                     foot_contacts = (
-                        session.foot_contacts[character_idx, frame_idx] > 0.5
-                        if session.foot_contacts is not None
+                        foot_contacts_all[character_idx, frame_idx] > 0.5
+                        if foot_contacts_all is not None
                         else None
                     )
                     character.set_pose(
-                        session.joints_pos[character_idx, frame_idx],
-                        session.joints_rot[character_idx, frame_idx],
+                        joints_pos[character_idx, frame_idx],
+                        joints_rot[character_idx, frame_idx],
                         foot_contacts=foot_contacts,
                         root_velocity=root_velocity,
                     )

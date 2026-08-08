@@ -30,6 +30,7 @@ from interactive_demo.loading import ModelLoadingMixin
 from interactive_demo.motion_io import MotionIOMixin
 from interactive_demo.playback import PlaybackMixin
 from interactive_demo.session_io import SessionIOMixin
+from interactive_demo.unity_bridge import UnityBridgeMixin
 
 import os
 import subprocess
@@ -48,6 +49,7 @@ if sys.platform == "win32":
   viser._client_autobuild.subprocess.run = _patched_run
 
 class InteractiveTimelineDemo(
+    UnityBridgeMixin,
     ModelLoadingMixin,
     MotionIOMixin,
     ClientMixin,
@@ -66,7 +68,7 @@ class InteractiveTimelineDemo(
     GuiIOMixin,
     PlaybackMixin,
 ):
-    def __init__(self, compile_model: bool = True):
+    def __init__(self, compile_model: bool = True, unity_bridge_port: int = 18805):
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         print(f"Using device: {self.device}")
 
@@ -124,6 +126,7 @@ class InteractiveTimelineDemo(
         # Register callbacks for session handling
         self.server.on_client_connect(self.on_client_connect)
         self.server.on_client_disconnect(self.on_client_disconnect)
+        self.init_unity_bridge(unity_bridge_port)
 
         # Floor setup
         self.floor_len = 20.0
@@ -159,12 +162,21 @@ def main() -> None:
         action="store_true",
         help="Enable multi-tier memory offloading (Disk-RAM-VRAM) for low-memory GPUs.",
     )
+    parser.add_argument(
+        "--unity-bridge-port",
+        type=int,
+        default=18805,
+        help="Loopback port used to mirror the browser runtime into Unity.",
+    )
     args = parser.parse_args()
 
     from ardy.model.memory_manager import manager as memory_manager
     memory_manager.offload_enabled = args.offload
 
-    demo = InteractiveTimelineDemo(compile_model=not args.no_compile)
+    demo = InteractiveTimelineDemo(
+        compile_model=not args.no_compile,
+        unity_bridge_port=args.unity_bridge_port,
+    )
     demo.run()
 
 
